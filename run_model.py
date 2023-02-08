@@ -9,7 +9,8 @@ import matplotlib.colors as mcolors
 if __name__ == '__main__':
     config = yaml.safe_load(open('./configs/vae_1d.yaml'))
     model = vae_models[config['model_params']['name']](**config['model_params'])
-    ckpt = torch.load('./logs/VanillaVAE1D/version_13/checkpoints/last.ckpt')
+    # ckpt = torch.load('./logs/VanillaVAE1D/version_13/checkpoints/last.ckpt')
+    ckpt = torch.load('./logs/VanillaVAE1D/version_24/checkpoints/last.ckpt')
     experiment = VAEXperiment(model, config['exp_params'])
     #model.load_state_dict(ckpt['state_dict'])
 
@@ -19,11 +20,10 @@ if __name__ == '__main__':
 
     # test_data = next(iter(data.test_dataloader()))
 
-    # test_input, recons, samples = experiment.sample_images(save_images=False, dataloader=data.test_dataloader())
-    # plt.plot(test_input[0,0])
-    # plt.show()
-    # plt.plot(recons[0,0])
-    # plt.show()
+    test_input, labels, recons, samples = experiment.sample_images(save_images=False, dataloader=data.test_dataloader())
+    plt.plot(test_input[0,0])
+    plt.plot(recons[0,0, 0])
+    plt.show()
 
     # plt.subplot(1, 2, 2)
     # plt.plot(test_input[0,0],recons[0,0,0])
@@ -66,7 +66,9 @@ if __name__ == '__main__':
 
     # EXPLORATORY TEST #
     # Give two inputs; interpolate in latent space; are they similar? #
-    interpolated = experiment.model.interpolate_inputs(test_input[0], test_input[5])
+    test_input, recons, samples = experiment.sample_images(save_images=False, dataloader=data.test_dataloader())
+    
+    interpolated = experiment.model.interpolate_inputs(test_input[3], test_input[15])
     res = interpolated[0].detach().numpy()
     for i in range(res.shape[0]):
         plt.plot(res[i,0])
@@ -82,13 +84,12 @@ if __name__ == '__main__':
 
     # TO-DO #
     # Single input to probabilistic output #
-    test_input, recons, samples = experiment.sample_images(save_images=False, dataloader=data.test_dataloader())
-    result = experiment.model.probabilistic_generate(x=test_input, M=100).detach().numpy()
+    result = experiment.model.probabilistic_generate(x=test_input[[3]], M=100).detach().numpy()
     quant = np.quantile(result, q=[0.025, 0.5, 0.975], axis=0)
     mean = np.mean(result, axis=0)
     colors = list(mcolors.BASE_COLORS)
-    n_lines = 2
-    offset=4
+    n_lines = 1
+    offset=0
     for i in range(n_lines):
         single_test = quant[:, i+offset, 0, :] 
         plt.plot(single_test[1], color=colors[i])

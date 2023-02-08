@@ -31,7 +31,7 @@ class Sin1D(Dataset):
         return np.random.beta(self.sigma_params[0], self.sigma_params[1])
     
     def r(self):
-        return np.random.lognormal(self.r_params[0], self.r_params[0])
+        return np.random.lognormal(self.r_params[0], self.r_params[1])
 
     def __len__(self):
         return 7500

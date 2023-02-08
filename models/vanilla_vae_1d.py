@@ -3,7 +3,7 @@ from models import BaseVAE
 from torch import nn
 from torch.nn import functional as F
 from .types_ import *
-
+from losses import *
 
 class VanillaVAE1D(BaseVAE):
 
@@ -11,10 +11,13 @@ class VanillaVAE1D(BaseVAE):
                  in_channels: int,
                  latent_dim: int,
                  hidden_dims: List = None,
+                 log_ratio: bool = False,
                  **kwargs) -> None:
         super(VanillaVAE1D, self).__init__()
 
         self.latent_dim = latent_dim
+        self.log_ratio = True
+        self.log_ratio_loss = LogRatioLoss()
 
         modules = []
         if hidden_dims is None:
@@ -116,10 +119,10 @@ class VanillaVAE1D(BaseVAE):
         eps = torch.randn_like(std)
         return eps * std + mu
 
-    def forward(self, input: Tensor, **kwargs) -> List[Tensor]:
+    def forward(self, input: Tensor, labels: Tensor, **kwargs) -> List[Tensor]:
         mu, log_var = self.encode(input)
         z = self.reparameterize(mu, log_var)
-        return  [self.decode(z), input, mu, log_var]
+        return  [self.decode(z), input, mu, log_var, labels]
 
     def loss_function(self,
                       *args,
@@ -135,15 +138,19 @@ class VanillaVAE1D(BaseVAE):
         input = args[1]
         mu = args[2]
         log_var = args[3]
+        labels = args[4]
 
         kld_weight = kwargs['M_N'] # Account for the minibatch samples from the dataset
-        recons_loss =F.mse_loss(recons, input)
-
-
+        recons_loss = F.mse_loss(recons, input)
         kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim = 1), dim = 0)
+        if self.log_ratio:
+            #interpolation_loss = self.log_ratio_loss(input, mu)
+            interpolation_loss = self.log_ratio_loss(labels, mu)
+        else:
+            interpolation_loss = 0
 
-        loss = recons_loss + kld_weight * kld_loss
-        return {'loss': loss, 'Reconstruction_Loss':recons_loss.detach(), 'KLD':-kld_loss.detach()}
+        loss = recons_loss + kld_weight * kld_loss + interpolation_loss
+        return {'loss': loss, 'Reconstruction_Loss': recons_loss.detach(), 'KLD':-kld_loss.detach(), 'Interpolation_Loss': interpolation_loss.detach()}
 
     def sample(self,
                num_samples:int,
@@ -169,7 +176,7 @@ class VanillaVAE1D(BaseVAE):
         :param x: (Tensor) [B x C x L]
         :return: (Tensor) [B x C x H x W]
         """
-        native = self.forward(x)[0]
+        native = self.forward(x, kwargs['labels'])[0]
         return torch.unsqueeze(native, 2)
     
 

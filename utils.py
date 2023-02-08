@@ -1,4 +1,6 @@
 import pytorch_lightning as pl
+import torch
+from torch.autograd import Function
 
 
 ## Utils to handle newer PyTorch Lightning changes from version 0.6
@@ -20,3 +22,4 @@ def data_loader(fn):
             return fn(self)
 
     return func_wrapper
+

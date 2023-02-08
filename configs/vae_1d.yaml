@@ -2,7 +2,7 @@ model_params:
   name: 'VanillaVAE1D'
   in_channels: 1
   latent_dim: 8
-
+  log_ratio: True
 
 data_params:
   data_path: "Data/"
@@ -10,17 +10,15 @@ data_params:
   val_batch_size:  64
   patch_size: 64
   num_workers: 4
-  b: [0, 0.5]
-  sigma: [2, 5]
-  r: [5.0, 0.3]
+  b: [0, 0.4]
+  sigma: [1, 4]
+  r: [4.0, 0.2]
   
-
-
 exp_params:
   LR: 0.005
   weight_decay: 0.0
   scheduler_gamma: 0.95
-  kld_weight: 0.00025
+  kld_weight: 0.003
   manual_seed: 1265
 
 trainer_params:
@@ -31,3 +29,6 @@ logging_params:
   save_dir: "logs/"
   name: "VanillaVAE"
   
+custom_params:
+  resume_training: True
+  resume_chkpt_path: './logs/VanillaVAE1D/version_13/checkpoints/last.ckpt'

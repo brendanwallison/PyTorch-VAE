@@ -51,7 +51,7 @@ class VAEXperiment(pl.LightningModule):
 
         results = self.forward(real_img, labels = labels)
         val_loss = self.model.loss_function(*results,
-                                            M_N = 1.0, #real_img.shape[0]/ self.num_val_imgs,
+                                            M_N = self.params['kld_weight'], #real_img.shape[0]/ self.num_val_imgs,
                                             optimizer_idx = optimizer_idx,
                                             batch_idx = batch_idx)
 
@@ -94,7 +94,7 @@ class VAEXperiment(pl.LightningModule):
         except Warning:
             pass
         if not save_images:
-            return test_input, recons.data, samples
+            return test_input, test_label, recons.data, samples
 
     def configure_optimizers(self):
 
